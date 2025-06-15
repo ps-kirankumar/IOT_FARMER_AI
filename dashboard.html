@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriVision Pro | Farm Dashboard</title>
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/weather-icons@2.0.10/css/weather-icons.min.css">
+    
+    <!-- Visualization Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css">
+    
+    <!-- Animation Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.11.5/dist/gsap.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --primary-light: #81c784;
+            --primary-dark: #1b5e20;
+            --secondary: #0288d1;
+            --accent: #ff9800;
+            --danger: #e53935;
+            --warning: #ffb300;
+            --text-dark: #263238;
+            --text-light: #eceff1;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --card-gradient: linear-gradient(to bottom right, #ffffff, #f5f5f5);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-dark);
+            min-height: 100vh;
+        }
+        
+        /* Glass Morphism Effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Main Content Area */
+        .main-content {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+        }
+        
+        .page-title h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            position: relative;
+            display: inline-block;
+        }
+        
+        .page-title h1::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 60%;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 3px;
+        }
+        
+        .page-subtitle {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+        
+        /* User Profile */
+        .user-profile {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .user-profile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 0.8rem;
+            border: 2px solid var(--primary-light);
+        }
+        
+        .user-name {
+            font-weight: 600;
+            margin-right: 0.8rem;
+        }
+        
+        .user-role {
+            font-size: 0.7rem;
+            color: var(--primary);
+            background: rgba(46, 125, 50, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+        }
+        
+        .logout-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-left: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .logout-btn:hover {
+            background: #c62828;
+            transform: translateY(-2px);
+        }
+        
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.8rem;
+            margin-bottom: 2.5rem;
+        }
+        
+        .card {
+            background: var(--card-gradient);
+            border-radius: 18px;
+            padding: 1.8rem;
+            transition: all 0.4s ease;
+            box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.05),
+                        -8px -8px 15px rgba(255, 255, 255, 0.8);
+        }
+        
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 12px 12px 25px rgba(0, 0, 0, 0.08),
+                        -12px -12px 25px rgba(255, 255, 255, 0.9);
+        }
+        
+        .card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.2rem;
+        }
+        
+        .card-title {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-icon.temperature { background: linear-gradient(135deg, #ff5252, #d32f2f); }
+        .card-icon.humidity { background: linear-gradient(135deg, #4fc3f7, #0288d1); }
+        .card-icon.soil { background: linear-gradient(135deg, #81c784, #2e7d32); }
+        .card-icon.light { background: linear-gradient(135deg, #fff176, #fbc02d); }
+        .card-icon.water { background: linear-gradient(135deg, #29b6f6, #01579b); }
+        .card-icon.weather { background: linear-gradient(135deg, #b39ddb, #4527a0); }
+        
+        .card-value {
+            font-size: 2.8rem;
+            font-weight: 600;
+            margin: 1rem 0;
+        }
+        
+        .card-unit {
+            font-size: 1.2rem;
+            font-weight: 400;
+            margin-left: 0.3rem;
+            opacity: 0.7;
+        }
+        
+        .card-footer {
+            display: flex;
+            align-items: center;
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .card-trend {
+            display: flex;
+            align-items: center;
+            margin-right: 1rem;
+        }
+        
+        .trend-up { color: var(--primary); }
+        .trend-down { color: var(--danger); }
+        .trend-icon { margin-right: 0.3rem; font-size: 0.9rem; }
+        .card-time { margin-left: auto; font-size: 0.75rem; color: #999; }
+        
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+        
+        .chart-container {
+            background: var(--card-gradient);
+            border-radius: 18px;
+            padding: 1.8rem;
+            box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.05),
+                        -8px -8px 15px rgba(255, 255, 255, 0.8);
+        }
+        
+        .chart-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 12px 12px 25px rgba(0, 0, 0, 0.08),
+                        -12px -12px 25px rgba(255, 255, 255, 0.9);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        
+        .chart { height: 320px; width: 100%; }
+        
+        /* AI Recommendations */
+        .ai-section {
+            margin-bottom: 2.5rem;
+        }
+        
+        .ai-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.8rem;
+        }
+        
+        .ai-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        
+        .ai-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 3px;
+        }
+        
+        .ai-refresh {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+            box-shadow: 0 4px 8px rgba(46, 125, 50, 0.2);
+        }
+        
+        .ai-refresh:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        .ai-refresh i {
+            margin-right: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .ai-refresh:hover i {
+            transform: rotate(90deg);
+        }
+        
+        .ai-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.8rem;
+        }
+        
+        .ai-card {
+            background: var(--card-gradient);
+            border-radius: 18px;
+            padding: 1.8rem;
+            box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.05),
+                        -8px -8px 15px rgba(255, 255, 255, 0.8);
+        }
+        
+        .ai-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 12px 12px 25px rgba(0, 0, 0, 0.08),
+                        -12px -12px 25px rgba(255, 255, 255, 0.9);
+        }
+        
+        .ai-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--secondary), var(--accent));
+        }
+        
+        .ai-card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.2rem;
+        }
+        
+        .ai-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.4rem;
+            margin-right: 1rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .ai-card-icon.crop { background: linear-gradient(135deg, #81c784, #2e7d32); }
+        .ai-card-icon.water { background: linear-gradient(135deg, #4fc3f7, #0288d1); }
+        .ai-card-icon.weather { background: linear-gradient(135deg, #ffb74d, #fb8c00); }
+        .ai-card-icon.yield { background: linear-gradient(135deg, #ffeb3b, #fbc02d); }
+        .ai-card-icon.pest { background: linear-gradient(135deg, #f44336, #d32f2f); }
+        
+        .ai-card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        
+        .ai-card-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 1rem 0;
+            color: var(--primary);
+        }
+        
+        .ai-card-desc {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        
+        .ai-card-footer {
+            display: flex;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #999;
+        }
+        
+        .ai-card-source {
+            margin-left: auto;
+            font-style: italic;
+        }
+        
+        /* Weather Forecast */
+        .weather-section {
+            margin-bottom: 2.5rem;
+        }
+        
+        .weather-cards {
+            display: flex;
+            gap: 1.5rem;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+        }
+        
+        .weather-card {
+            min-width: 120px;
+            background: var(--card-gradient);
+            border-radius: 16px;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.05),
+                        -5px -5px 10px rgba(255, 255, 255, 0.8);
+        }
+        
+        .weather-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .weather-day {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary-dark);
+        }
+        
+        .weather-icon {
+            font-size: 2rem;
+            margin: 0.5rem 0;
+            color: var(--secondary);
+        }
+        
+        .weather-temp {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        
+        /* Farm Map */
+        .map-section {
+            margin-bottom: 2.5rem;
+        }
+        
+        .map-container {
+            height: 400px;
+            border-radius: 18px;
+            box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.05),
+                        -8px -8px 15px rgba(255, 255, 255, 0.8);
+        }
+        
+        /* Alerts Section */
+        .alerts-section {
+            margin-bottom: 2.5rem;
+        }
+        
+        .alerts-content {
+            background: var(--card-gradient);
+            border-radius: 18px;
+            padding: 1.8rem;
+            box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.05),
+                        -8px -8px 15px rgba(255, 255, 255, 0.8);
+        }
+        
+        .alert-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        .alert-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            margin-right: 1rem;
+        }
+        
+        .alert-icon.warning { background: var(--warning); }
+        .alert-icon.danger { background: var(--danger); }
+        
+        .alert-text {
+            flex: 1;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+        }
+        
+        .alert-time {
+            font-size: 0.8rem;
+            color: #999;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 1200px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1.5rem;
+            }
+            
+            .cards-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .ai-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <main class="main-content">
+        <div class="header">
+            <div class="page-title">
+                <h1>Farm Intelligence Dashboard</h1>
+                <div class="page-subtitle">Real-time monitoring and AI-powered insights for your farm</div>
+            </div>
+            <div class="user-profile">
+                <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="User" class="user-avatar">
+                <span class="user-name">{{ username }}</span>
+                <span class="user-role">Farm Manager</span>
+                <button class="logout-btn" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+
+        <!-- Real-time Cards -->
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Temperature</span>
+                    <div class="card-icon temperature">
+                        <i class="fas fa-temperature-high"></i>
+                    </div>
+                </div>
+                <div class="card-value" id="temperature">24.5<span class="card-unit">°C</span></div>
+                <div class="card-footer">
+                    <div class="card-trend trend-up">
+                        <i class="fas fa-arrow-up trend-icon"></i>
+                        <span id="temp-trend">Stable</span>
+                    </div>
+                    <div class="card-time">Updated: <span id="temp-time">Just now</span></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Humidity</span>
+                    <div class="card-icon humidity">
+                        <i class="fas fa-tint"></i>
+                    </div>
+                </div>
+                <div class="card-value" id="humidity">68<span class="card-unit">%</span></div>
+                <div class="card-footer">
+                    <div class="card-trend trend-down">
+                        <i class="fas fa-arrow-down trend-icon"></i>
+                        <span id="humidity-trend">Normal</span>
+                    </div>
+                    <div class="card-time">Updated: <span id="humidity-time">Just now</span></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Soil Moisture</span>
+                    <div class="card-icon soil">
+                        <i class="fas fa-seedling"></i>
+                    </div>
+                </div>
+                <div class="card-value" id="soilMoisture">45<span class="card-unit">%</span></div>
+                <div class="card-footer">
+                    <div class="card-trend trend-up">
+                        <i class="fas fa-arrow-up trend-icon"></i>
+                        <span id="soil-trend">Optimal</span>
+                    </div>
+                    <div class="card-time">Updated: <span id="soil-time">Just now</span></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Light Intensity</span>
+                    <div class="card-icon light">
+                        <i class="fas fa-sun"></i>
+                    </div>
+                </div>
+                <div class="card-value" id="lightIntensity">850<span class="card-unit">lux</span></div>
+                <div class="card-footer">
+                    <div class="card-trend trend-up">
+                        <i class="fas fa-arrow-up trend-icon"></i>
+                        <span id="light-trend">Good</span>
+                    </div>
+                    <div class="card-time">Updated: <span id="light-time">Just now</span></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Water Level</span>
+                    <div class="card-icon water">
+                        <i class="fas fa-tint"></i>
+                    </div>
+                </div>
+                <div class="card-value" id="waterLevel">78<span class="card-unit">%</span></div>
+                <div class="card-footer">
+                    <div class="card-trend trend-down">
+                        <i class="fas fa-arrow-down trend-icon"></i>
+                        <span id="water-trend">Sufficient</span>
+                    </div>
+                    <div class="card-time">Updated: <span id="water-time">Just now</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Environmental Trends (Last 24 Hours)</h3>
+                </div>
+                <div class="chart" id="mainChart"></div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Soil Conditions Analysis</h3>
+                </div>
+                <div class="chart" id="soilChart"></div>
+            </div>
+        </div>
+
+        <!-- AI Recommendations -->
+        <div class="ai-section">
+            <div class="ai-header">
+                <h3 class="ai-title">AI Farming Recommendations</h3>
+                <button class="ai-refresh" id="refreshAi">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Refresh Insights</span>
+                </button>
+            </div>
+            <div class="ai-content">
+                <div class="ai-card">
+                    <div class="ai-card-header">
+                        <div class="ai-card-icon crop">
+                            <i class="fas fa-seedling"></i>
+                        </div>
+                        <h4 class="ai-card-title">Recommended Crop</h4>
+                    </div>
+                    <div class="ai-card-value" id="recommendedCrop">Tomatoes</div>
+                    <div class="ai-card-desc" id="cropDesc">
+                        Based on current soil conditions, tomatoes show a high compatibility score.
+                    </div>
+                    <div class="ai-card-footer">
+                        <span>Confidence: 92%</span>
+                        <span class="ai-card-source">AgriVision AI</span>
+                    </div>
+                </div>
+                <div class="ai-card">
+                    <div class="ai-card-header">
+                        <div class="ai-card-icon water">
+                            <i class="fas fa-tint"></i>
+                        </div>
+                        <h4 class="ai-card-title">Irrigation Schedule</h4>
+                    </div>
+                    <div class="ai-card-value" id="wateringSchedule">8:00 AM</div>
+                    <div class="ai-card-desc" id="irrigationDesc">
+                        Optimal watering time based on soil moisture and weather.
+                    </div>
+                    <div class="ai-card-footer">
+                        <span>Duration: 45 mins</span>
+                        <span class="ai-card-source">Smart Irrigation AI</span>
+                    </div>
+                </div>
+                <div class="ai-card">
+                    <div class="ai-card-header">
+                        <div class="ai-card-icon weather">
+                            <i class="wi wi-rain"></i>
+                        </div>
+                        <h4 class="ai-card-title">Weather Alert</h4>
+                    </div>
+                    <div class="ai-card-value" id="weatherAlert">No Alerts</div>
+                    <div class="ai-card-desc" id="weatherDesc">
+                        No significant weather events expected in the next 48 hours.
+                    </div>
+                    <div class="ai-card-footer">
+                        <span>Probability: 85%</span>
+                        <span class="ai-card-source">Weather AI</span>
+                    </div>
+                </div>
+                <div class="ai-card">
+                    <div class="ai-card-header">
+                        <div class="ai-card-icon yield">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h4 class="ai-card-title">Crop Yield Prediction</h4>
+                    </div>
+                    <div class="ai-card-value" id="yieldPrediction">High</div>
+                    <div class="ai-card-desc" id="yieldDesc">
+                        Favorable conditions indicate a high yield potential.
+                    </div>
+                    <div class="ai-card-footer">
+                        <span>Confidence: 90%</span>
+                        <span class="ai-card-source">Yield AI</span>
+                    </div>
+                </div>
+                <div class="ai-card">
+                    <div class="ai-card-header">
+                        <div class="ai-card-icon water">
+                            <i class="fas fa-water"></i>
+                        </div>
+                        <h4 class="ai-card-title">Irrigation Efficiency</h4>
+                    </div>
+                    <div class="ai-card-value" id="irrigationEfficiency">Optimal</div>
+                    <div class="ai-card-desc" id="efficiencyDesc">
+                        Current water usage is within optimal range.
+                    </div>
+                    <div class="ai-card-footer">
+                        <span>Confidence: 88%</span>
+                        <span class="ai-card-source">Efficiency AI</span>
+                    </div>
+                </div>
+                <div class="ai-card">
+                    <div class="ai-card-header">
+                        <div class="ai-card-icon pest">
+                            <i class="fas fa-bug"></i>
+                        </div>
+                        <h4 class="ai-card-title">Pest Risk</h4>
+                    </div>
+                    <div class="ai-card-value" id="pestRisk">Low</div>
+                    <div class="ai-card-desc" id="pestDesc">
+                        Low risk of pest infestation based on current conditions.
+                    </div>
+                    <div class="ai-card-footer">
+                        <span>Confidence: 85%</span>
+                        <span class="ai-card-source">Pest AI</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Section -->
+        <div class="alerts-section">
+            <h3 class="ai-title">Active Alerts</h3>
+            <div class="alerts-content" id="alertsContent">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Weather Forecast -->
+        <div class="weather-section">
+            <h3 class="ai-title">7-Day Weather Forecast</h3>
+            <div class="weather-cards" id="weatherForecast">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Farm Map -->
+        <div class="map-section">
+            <h3 class="ai-title">Farm Field Map</h3>
+            <div class="map-container" id="farmMap"></div>
+        </div>
+    </main>
+
+    <script>
+        let mainChart = null;
+        let soilChart = null;
+        let farmMap = null;
+        let dataRefreshInterval = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+        });
+
+        function initializeDashboard() {
+            initCharts();
+            initMap();
+            fetchData();
+            dataRefreshInterval = setInterval(fetchData, 30000);
+
+            document.getElementById('refreshAi').addEventListener('click', function() {
+                clearInterval(dataRefreshInterval);
+                fetchData();
+                dataRefreshInterval = setInterval(fetchData, 30000);
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', async function() {
+                try {
+                    const response = await fetch('/api/logout', { method: 'POST' });
+                    if (response.ok) {
+                        window.location.href = '/login';
+                    } else {
+                        showError('Logout failed');
+                    }
+                } catch (error) {
+                    showError('Error during logout');
+                }
+            });
+        }
+
+        function initCharts() {
+            const mainChartEl = document.getElementById('mainChart');
+            if (mainChartEl) {
+                mainChart = echarts.init(mainChartEl);
+                mainChart.setOption({
+                    tooltip: { trigger: 'axis' },
+                    legend: { data: ['Temperature', 'Humidity', 'Light'] },
+                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                    xAxis: { type: 'category', boundaryGap: false, data: [] },
+                    yAxis: { type: 'value' },
+                    series: [
+                        { name: 'Temperature', type: 'line', data: [], smooth: true },
+                        { name: 'Humidity', type: 'line', data: [], smooth: true },
+                        { name: 'Light', type: 'line', data: [], smooth: true }
+                    ]
+                });
+            }
+
+            const soilChartEl = document.getElementById('soilChart');
+            if (soilChartEl) {
+                soilChart = echarts.init(soilChartEl);
+                soilChart.setOption({
+                    tooltip: { trigger: 'item' },
+                    series: [{
+                        name: 'Soil Moisture',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        data: [
+                            { value: 0, name: 'Moisture' },
+                            { value: 100, name: 'Other' }
+                        ],
+                        label: { show: true, formatter: '{b}: {d}%' }
+                    }]
+                });
+            }
+        }
+
+        function initMap() {
+            const mapEl = document.getElementById('farmMap');
+            if (mapEl) {
+                farmMap = L.map('farmMap').setView([39.0646, -94.5877], 15); // Kansas City farm
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                }).addTo(farmMap);
+                L.marker([39.0646, -94.5877]).addTo(farmMap)
+                    .bindPopup('Farm: 211 West Armour Blvd, Kansas City, MO')
+                    .openPopup();
+            }
+        }
+
+        async function fetchData() {
+            try {
+                startLoading();
+                
+                // Fetch sensor data
+                const dataResponse = await fetch('/api/current-data');
+                if (!dataResponse.ok) throw new Error(`HTTP error! status: ${dataResponse.status}`);
+                const data = await dataResponse.json();
+                if (data.error) throw new Error(data.error);
+
+                // Fetch alerts
+                const alertsResponse = await fetch('/api/alerts');
+                if (!alertsResponse.ok) throw new Error(`HTTP error! status: ${alertsResponse.status}`);
+                const alertsData = await alertsResponse.json();
+                if (alertsData.error) throw new Error(alertsData.error);
+
+                if (data.current) updateSensorCards(data.current);
+                if (data.charts) updateCharts(data.charts);
+                if (data.ai_recommendations) updateAIRecommendations(data.ai_recommendations);
+                if (data.weather_forecast) updateWeatherForecast(data.weather_forecast);
+                if (alertsData.alerts) updateAlerts(alertsData.alerts);
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showError(error.message);
+            } finally {
+                stopLoading();
+            }
+        }
+
+        function updateSensorCards(currentData) {
+            document.getElementById('temperature').innerHTML = currentData.temperature.toFixed(1) + '<span class="card-unit">°C</span>';
+            document.getElementById('humidity').innerHTML = Math.round(currentData.humidity) + '<span class="card-unit">%</span>';
+            document.getElementById('soilMoisture').innerHTML = Math.round(currentData.soil_moisture) + '<span class="card-unit">%</span>';
+            document.getElementById('lightIntensity').innerHTML = Math.round(currentData.light_temt) + '<span class="card-unit">lux</span>';
+            document.getElementById('waterLevel').innerHTML = Math.round(currentData.water_level / 40.95) + '<span class="card-unit">%</span>';
+
+            const updateTime = new Date(currentData.timestamp);
+            const options = {
+                timeZone: 'America/Chicago', // CST timezone
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            const timeString = updateTime.toLocaleTimeString('en-US', options);
+            document.querySelectorAll('.card-time span').forEach(el => {
+                el.textContent = timeString;
+            });
+           
+
+            // Update trends
+            document.getElementById('temp-trend').textContent = currentData.temperature > 25 ? 'High' : 'Stable';
+            document.getElementById('humidity-trend').textContent = currentData.humidity > 70 ? 'High' : 'Normal';
+            document.getElementById('soil-trend').textContent = currentData.soil_moisture > 40 ? 'Optimal' : 'Low';
+            document.getElementById('light-trend').textContent = currentData.light_temt > 800 ? 'Good' : 'Moderate';
+            document.getElementById('water-trend').textContent = currentData.water_level < 2000 ? 'Refill needed' : 'Sufficient';
+
+            pulseElements('.card-value');
+        }
+
+        function updateCharts(chartData) {
+            if (mainChart) {
+                mainChart.setOption({
+                    xAxis: { data: chartData.times },
+                    series: [
+                        { data: chartData.temperature },
+                        { data: chartData.humidity },
+                        { data: chartData.light }
+                    ]
+                });
+            }
+
+            if (soilChart && chartData.soil.length > 0) {
+                const lastSoilValue = chartData.soil[chartData.soil.length - 1];
+                soilChart.setOption({
+                    series: [{
+                        data: [
+                            { value: lastSoilValue, name: 'Moisture' },
+                            { value: 100 - lastSoilValue, name: 'Other' }
+                        ]
+                    }]
+                });
+            }
+        }
+
+        function updateAIRecommendations(aiData) {
+            document.getElementById('recommendedCrop').textContent = aiData.crop;
+            document.getElementById('cropDesc').textContent = `Based on soil moisture (${Math.round(aiData.soil_moisture)}%), ${aiData.crop} is optimal.`;
+            document.getElementById('wateringSchedule').textContent = aiData.irrigation;
+            document.getElementById('irrigationDesc').textContent = `Schedule irrigation at ${aiData.irrigation} to optimize water usage.`;
+            document.getElementById('weatherAlert').textContent = aiData.weather_alert;
+            document.getElementById('weatherDesc').textContent = aiData.weather_alert === 'No Alerts' ? 'No significant weather events expected.' : `Alert: ${aiData.weather_alert}.`;
+            document.getElementById('yieldPrediction').textContent = aiData.yield_prediction;
+            document.getElementById('yieldDesc').textContent = aiData.yield_prediction === 'High' ? 'Favorable conditions indicate a high yield potential.' : 'Moderate or low yield expected. Review conditions.';
+            document.getElementById('irrigationEfficiency').textContent = aiData.irrigation_efficiency;
+            document.getElementById('efficiencyDesc').textContent = aiData.irrigation_efficiency === 'Optimal' ? 'Current water usage is within optimal range.' : 'Adjust irrigation to improve efficiency.';
+            document.getElementById('pestRisk').textContent = aiData.pest_risk;
+            document.getElementById('pestDesc').textContent = aiData.pest_risk === 'Low' ? 'Low risk of pest infestation.' : 'High pest risk. Consider preventive measures.';
+        }
+
+        function updateAlerts(alerts) {
+            const alertsContent = document.getElementById('alertsContent');
+            alertsContent.innerHTML = '';
+            
+            if (alerts.length === 0) {
+                alertsContent.innerHTML = '<div class="alert-item"><div class="alert-text">No active alerts</div></div>';
+                return;
+            }
+
+            alerts.forEach(alert => {
+    const time = new Date(alert.timestamp).toLocaleTimeString('en-US', {
+        timeZone: 'America/Chicago', // CST (automatically handles CDT in daylight saving)
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true // Optional: ensures AM/PM format (e.g., "03:45 PM")
+    });
+    // Your remaining logic here...
+
+                const iconClass = alert.severity === 'warning' ? 'warning' : 'danger';
+                let icon;
+                switch (alert.type) {
+                    case 'low_water':
+                        icon = 'fa-tint';
+                        break;
+                    case 'high_temperature':
+                        icon = 'fa-temperature-high';
+                        break;
+                    case 'low_soil_moisture':
+                    case 'flooding':
+                        icon = 'fa-seedling';
+                        break;
+                    case 'persistent_motion':
+                        icon = 'fa-running';
+                        break;
+                    default:
+                        icon = 'fa-exclamation-triangle';
+                }
+                
+                const alertHtml = `
+                    <div class="alert-item">
+                        <div class="alert-icon ${iconClass}">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div class="alert-text">${alert.message}</div>
+                        <div class="alert-time">${time}</div>
+                    </div>
+                `;
+                alertsContent.innerHTML += alertHtml;
+            });
+        }
+
+        function updateWeatherForecast(forecastData) {
+            const forecastEl = document.getElementById('weatherForecast');
+            forecastEl.innerHTML = '';
+
+            const weatherIcons = {
+                'Clear': 'wi-day-sunny',
+                'Clouds': 'wi-day-cloudy',
+                'Rain': 'wi-rain',
+                'Drizzle': 'wi-showers',
+                'Thunderstorm': 'wi-thunderstorm',
+                'Snow': 'wi-snow',
+                'Mist': 'wi-fog'
+            };
+
+            forecastData.forEach(day => {
+                const date = new Date(day.date);
+                const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                const icon = weatherIcons[day.condition] || 'wi-day-sunny';
+                const temp = `${Math.round(day.temp_high)}°/${Math.round(day.temp_low)}°`;
+
+                const weatherHtml = `
+                    <div class="weather-card">
+                        <div class="weather-day">${dayName}</div>
+                        <div class="weather-icon"><i class="wi ${icon}"></i></div>
+                        <div class="weather-temp">${temp}</div>
+                    </div>
+                `;
+                forecastEl.innerHTML += weatherHtml;
+            });
+        }
+
+        function startLoading() {
+            const refreshBtn = document.getElementById('refreshAi');
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+        }
+
+        function stopLoading() {
+            const refreshBtn = document.getElementById('refreshAi');
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.position = 'fixed';
+            errorDiv.style.top = '20px';
+            errorDiv.style.right = '20px';
+            errorDiv.style.background = 'var(--danger)';
+            errorDiv.style.color = 'white';
+            errorDiv.style.padding = '1rem';
+            errorDiv.style.borderRadius = '8px';
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message || 'Error loading data'}`;
+            document.body.appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        function pulseElements(selector) {
+            document.querySelectorAll(selector).forEach(el => {
+                el.classList.add('pulse');
+                setTimeout(() => el.classList.remove('pulse'), 2000);
+            });
+        }
+
+        window.addEventListener('resize', function() {
+            if (mainChart) mainChart.resize();
+            if (soilChart) soilChart.resize();
+        });
+    </script>
+</body>
+</html>
